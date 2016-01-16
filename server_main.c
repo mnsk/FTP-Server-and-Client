@@ -11,7 +11,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>  
-#include <stdlib.h>   
+#include <stdlib.h> 
+#include <errno.h>
 
 //Defines   
 #define CONTROL_PORT 1221
@@ -217,34 +218,39 @@ int main(int argc, char *argv[]) {
              if (strncmp(rbuffer,"LIST",4)==0)  {   
                  printf("Equivalent to dir \n");   
                  system("dir > tmp.txt");    
-                 FILE *fin=fopen("tmp.txt","r");   
-                 sprintf(sbuffer, "125 Transfering... \r\n");   
+                 FILE *fin=fopen("tmp.txt","r");  
+                 if(fin == NULL){
+                  perror("Can't open list file. "); 
+                 } 
+                 sprintf(sbuffer, "125 Transferring... \r\n");   
                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                 char temp_buffer[100];   
+                 char temp_buffer[80];   
                  while (!feof(fin)){   
-                fgets(temp_buffer,98,fin);   
-                sprintf(sbuffer,"%s \r\n",temp_buffer);   
-                  if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
+                    fgets(temp_buffer,78,fin);   
+                    sprintf(sbuffer,"%s\r\n",temp_buffer);   
+                    if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
                     else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
                  }   
-                fclose(fin);   
+                if(fclose(fin) != 0) {
+                  perror("Can't close list file. "); 
+                }   
                  sprintf(sbuffer, "226 Transfer completed... \r\n");   
                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                 system("del tmp.txt");   
+                 system("rm tmp.txt");   
                //CLOSE the ns_data SOCKET or data port SOCKET   
                 if(port_connect==0)    
                   {   
                       close(ns_data);   
-                      sprintf(sbuffer,"226 Close the data socket... \r\n");   
-                     bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
+                     // sprintf(sbuffer,"226 Close the data socket... \r\n");   
+                     // bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
                       ns_data = socket(AF_INET, SOCK_STREAM, 0);   
                    }   
                 else   
                   {    
-                   close(s_data_port);               
-                   sprintf(sbuffer,"226 Close the port connection... \r\n");   
-                   bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                   s_data_port = socket(AF_INET, SOCK_STREAM, 0);   
+                     close(s_data_port);               
+                    // sprintf(sbuffer,"226 Close the port connection... \r\n");   
+                    // bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
+                     s_data_port = socket(AF_INET, SOCK_STREAM, 0);   
                   }                    
                 //sy_error=0;   
               }   
@@ -327,7 +333,7 @@ int main(int argc, char *argv[]) {
 //Syntax error   
            if (sy_error==1) {   
               printf("command unrecognized, non-implemented!\n");   
-              sprintf(sbuffer, "500 Syntax error. \n");   
+              sprintf(sbuffer, "500 Syntax error. \r\n");   
               bytes = send(ns, sbuffer, strlen(sbuffer), 0);       
                }   
            
