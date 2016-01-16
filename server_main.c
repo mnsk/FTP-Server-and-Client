@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
         {   
             n = 0;
 
+            //memset(sbuffer, 0, SIZE);
             memset(rbuffer, 0, sizeof(rbuffer));
             memset(userinfo, 0, sizeof(userinfo));
             //printf("userinfo main %s\n",userinfo);
@@ -215,43 +216,34 @@ int main(int argc, char *argv[]) {
    
 //LIST   
                          
-             if (strncmp(rbuffer,"LIST",4)==0)  {   
+             if (strncmp(rbuffer,"LIST",4)==0)  {  
+                 int i = 0; 
                  printf("Equivalent to dir \n");   
                  system("dir > tmp.txt");    
                  FILE *fin=fopen("tmp.txt","r");  
                  if(fin == NULL){
                   perror("Can't open list file. "); 
                  } 
-                 sprintf(sbuffer, "125 Transferring... \r\n");   
-                 bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                 char temp_buffer[80];   
-                 while (!feof(fin)){   
-                    fgets(temp_buffer,78,fin);   
-                    sprintf(sbuffer,"%s\r\n",temp_buffer);   
-                    if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
-                    else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
+                 // sprintf(sbuffer, "125 Transferring... \r\n");   
+                 // bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
+                 printf("Transferring...\n"); 
+                 char temp_buffer[100];  
+                 while (!feof(fin))
+                    temp_buffer[i++] = fgetc(fin);
+                    temp_buffer[i-1] = '\0'; 
+                    sprintf(sbuffer,"%s",temp_buffer);  
+
+                 if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
+                 else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
+                  
+                 if(fclose(fin) != 0) {
+                   perror("Can't close list file. "); 
                  }   
-                if(fclose(fin) != 0) {
-                  perror("Can't close list file. "); 
-                }   
-                 sprintf(sbuffer, "226 Transfer completed... \r\n");   
-                 bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
+                 // sprintf(sbuffer, "226 Transfer completed... \r\n");   
+                 // bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
+                 printf("Transfer completed\n");   
                  system("rm tmp.txt");   
-               //CLOSE the ns_data SOCKET or data port SOCKET   
-                if(port_connect==0)    
-                  {   
-                      close(ns_data);   
-                     // sprintf(sbuffer,"226 Close the data socket... \r\n");   
-                     // bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                      ns_data = socket(AF_INET, SOCK_STREAM, 0);   
-                   }   
-                else   
-                  {    
-                     close(s_data_port);               
-                    // sprintf(sbuffer,"226 Close the port connection... \r\n");   
-                    // bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                     s_data_port = socket(AF_INET, SOCK_STREAM, 0);   
-                  }                    
+                         
                 //sy_error=0;   
               }   
 //RETR   
@@ -324,9 +316,24 @@ int main(int argc, char *argv[]) {
                           
                if (strncmp(rbuffer,"QUIT",4)==0)  {   
                   printf("quitting..  \n");   
+               //CLOSE the ns_data SOCKET or data port SOCKET   
+                  if(port_connect==0)    
+                    {   
+                        close(ns_data);   
+                        sprintf(sbuffer,"226 Close the data socket... \r\n");   
+                        bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
+                        ns_data = socket(AF_INET, SOCK_STREAM, 0);   
+                     }   
+                  else   
+                    {    
+                       close(s_data_port);               
+                       sprintf(sbuffer,"226 Close the port connection... \r\n");   
+                       bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
+                       s_data_port = socket(AF_INET, SOCK_STREAM, 0);   
+                    }          
                   sprintf(sbuffer, "221 Logging Out... \r\n");   
                   bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                 sy_error=0;   
+                 //sy_error=0;   
                  break;   
                  }  
    

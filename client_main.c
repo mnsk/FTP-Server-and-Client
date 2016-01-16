@@ -166,15 +166,15 @@ int main(int argc, char *argv[]) {
                          
        if (strncmp(sbuffer,"LIST",4)==0)  {   
           bytes = send(s, sbuffer, strlen(sbuffer), 0);  
-          recv(s,rbuffer,SIZE,0);
+          //recv(s,rbuffer,SIZE,0);
           if(strncmp(rbuffer,"332",3)!=0) {
-          printf("%s\n",rbuffer );
-          memset(rbuffer, 0, SIZE);
+          // printf("%s\n",rbuffer );
+          // memset(rbuffer, 0, SIZE);
           recv(s_data,rbuffer,SIZE,0);
           printf("%s\n",rbuffer );
-          memset(rbuffer, 0, SIZE);
-          recv(s,rbuffer,SIZE,0);
-          printf("%s\n",rbuffer );
+          // memset(rbuffer, 0, SIZE);
+          // recv(s,rbuffer,SIZE,0);
+          // printf("%s\n",rbuffer );
         }else
           printf("%s\n",rbuffer );
           sy_error=0; 
