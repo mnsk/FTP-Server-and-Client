@@ -11,7 +11,7 @@
 #include <stdlib.h>   
 
 //Defines     
-#define SIZE 80
+#define SIZE 200
 
 char sbuffer[SIZE],rbuffer[SIZE];//send and receive buffers   
 int n,bytes;//counters   
@@ -69,10 +69,9 @@ int main(int argc, char *argv[]) {
 
 	while(1) {
 
-    fflush(stdout);
+    //fflush(stdout);
   	memset(sbuffer, 0, SIZE);
     memset(rbuffer, 0, SIZE);
-  	
 
 		n = 0;
 
@@ -81,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     if(strncmp(sbuffer,"USER",4)  && strncmp(sbuffer,"PASS",4)    &&  strncmp(sbuffer,"SYST",4)
             &&strncmp(sbuffer,"PORT",4)   && strncmp(sbuffer,"PASV",4)    &&  strncmp(sbuffer,"RETR",4)
-            &&strncmp(sbuffer,"LIST",4)  &&  strncmp(sbuffer,"NLST",4)    &&  strncmp(sbuffer,"QUIT",4))
+            &&strncmp(sbuffer,"LIST",4)   &&  strncmp(sbuffer,"QUIT",4))
     {
             bytes = send(s, sbuffer, strlen(sbuffer), 0);
             recv(s,rbuffer,SIZE,0);
@@ -166,22 +165,61 @@ int main(int argc, char *argv[]) {
                          
        if (strncmp(sbuffer,"LIST",4)==0)  {   
           bytes = send(s, sbuffer, strlen(sbuffer), 0);  
-          //recv(s,rbuffer,SIZE,0);
-          if(strncmp(rbuffer,"332",3)!=0) {
-          // printf("%s\n",rbuffer );
-          // memset(rbuffer, 0, SIZE);
-          recv(s_data,rbuffer,SIZE,0);
-          printf("%s\n",rbuffer );
-          // memset(rbuffer, 0, SIZE);
+          recv(s,rbuffer,SIZE,0);
+          if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
+            // printf("%s\n",rbuffer );
+            memset(rbuffer, 0, SIZE);
+            recv(s_data,rbuffer,SIZE,0);
+            printf("%s\n",rbuffer );
+            // memset(rbuffer, 0, SIZE);
+            // recv(s,rbuffer,SIZE,0);
+            // printf("%s\n",rbuffer );
+          }else
+            printf("%s\n",rbuffer );
+            sy_error=0; 
+        } 
+
+      //RETR   
+                         
+       if (strncmp(sbuffer,"RETR",4)==0)  {  
+
+          char ch,filename[20],temp_buffer[100]; 
+          int i = 0;
+          bytes = send(s, sbuffer, strlen(sbuffer), 0); 
+          sscanf(sbuffer+5,"%s",filename); 
+          printf("filename %s\n",filename); 
+          recv(s,rbuffer,SIZE,0);
+          if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
+           printf("%s",rbuffer );
+
+           memset(rbuffer, 0, SIZE);
+           bytes = recv(s_data,rbuffer,SIZE,0);
+           if ( bytes <= 0 ) break;
+
+           printf("Content \n%s\n",rbuffer);
+
+           FILE *fout = fopen(filename,"w");
+           if(fout == NULL){
+              perror("Can't create file.\n"); 
+           }else {
+            printf("here2\n");
+            while(rbuffer[i] != '\0') {
+              ch = rbuffer[i];
+              putc(ch,fout);
+              i++;
+            }
+            fclose(fout);
+
+           }
+           printf("here3\n");
+           memset(rbuffer, 0, SIZE);
           // recv(s,rbuffer,SIZE,0);
+           printf("here4\n");
           // printf("%s\n",rbuffer );
-        }else
-          printf("%s\n",rbuffer );
-          sy_error=0; 
-        }   
-
-                 
-
+        } else
+            printf("%s\n",rbuffer );
+            sy_error=0; 
+        }
 	}
 	return 0;
 }

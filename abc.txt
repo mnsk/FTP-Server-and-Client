@@ -1,0 +1,10 @@
+a.out
+client
+ftpclient.c
+ftpclient_simple.c
+ftp_serv2.c
+ftpserver.c
+ftpserver_simple.c
+server
+temps.txt
+temp.txt

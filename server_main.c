@@ -97,20 +97,20 @@ int main(int argc, char *argv[]) {
             {   
 //RECEIVE   
                 bytes = recv(ns, &rbuffer[n], 1, 0);   
-                if ((bytes < 0) || (bytes == 0)) break;   
+                if ( bytes <= 0 ) break;
                 if (rbuffer[n] == '\n') { /*end on LF*/   
                     rbuffer[n] = '\0';   
                     break; }    
                 if (rbuffer[n] != '\r') n++; /*ignore CR's*/   
             } // end of while loop 3    
-            if ((bytes < 0) || (bytes == 0)) break;   
+             if ( bytes <= 0 ) break;
             printf("#The Server receives:# '%s' from client \n", rbuffer);  
 
       //COMMAND CHECKING
 
         if(strncmp(rbuffer,"USER",4)  && strncmp(rbuffer,"PASS",4)    &&  strncmp(rbuffer,"SYST",4)
                 &&strncmp(rbuffer,"PORT",4)   && strncmp(rbuffer,"PASV",4)    &&  strncmp(rbuffer,"RETR",4)
-                &&strncmp(rbuffer,"LIST",4)  &&  strncmp(rbuffer,"NLST",4)    &&  strncmp(rbuffer,"QUIT",4))
+                &&strncmp(rbuffer,"LIST",4)   &&  strncmp(rbuffer,"QUIT",4))
         {
             sy_error = 1; //user_ok=1; pass_ok=1;    
         } else {
@@ -213,99 +213,87 @@ int main(int argc, char *argv[]) {
                 printf("Successful connected to client,ready to transfer.\n");}   
                
             }   
+
+//RETR   
+          if (strncmp(rbuffer,"RETR",4)==0)  {  
+             int i = 0; 
+             printf("RETR mode.\r\n");         
+             char filename[20],temp_buffer[100]; 
+             sscanf(rbuffer+5,"%s",filename);
+
+             FILE *fin=fopen(filename,"r"); 
+             if(fin == NULL)
+                {   
+                    perror("File not found.");
+                    sprintf(sbuffer,"450 Requested file action not taken. \r\n");
+                    bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                }
+                
+             else   
+              {
+                
+               printf("The file %s found,ready to transfer.\n",filename);   
+               sprintf(sbuffer,"150 Transfering... \r\n");
+               bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+
+                while (!feof(fin))
+                    temp_buffer[i++] = fgetc(fin);
+                    temp_buffer[i-1] = '\0'; 
+                    sprintf(sbuffer,"%s",temp_buffer); 
+                    printf("Content\n%s\n",sbuffer); 
+
+               if (port_connect==0) {send(ns_data, sbuffer, strlen(sbuffer), 0); printf("here\n");}   
+               else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
+                
+               if(fclose(fin) != 0) {
+                 perror("Can't close Retr file. "); 
+               } 
+                printf("here2\n");    
+               // sprintf(sbuffer,"226 File transfer completed... \r\n");   
+                //bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
+                printf("here3\n");
+            }
+              //sy_error=0;
+              printf("here4\n");  
+          }   
+
    
-//LIST   
-                         
+//LIST                 
              if (strncmp(rbuffer,"LIST",4)==0)  {  
                  int i = 0; 
                  printf("Equivalent to dir \n");   
                  system("dir > tmp.txt");    
                  FILE *fin=fopen("tmp.txt","r");  
                  if(fin == NULL){
-                  perror("Can't open list file. "); 
-                 } 
-                 // sprintf(sbuffer, "125 Transferring... \r\n");   
-                 // bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
-                 printf("Transferring...\n"); 
-                 char temp_buffer[100];  
-                 while (!feof(fin))
-                    temp_buffer[i++] = fgetc(fin);
-                    temp_buffer[i-1] = '\0'; 
-                    sprintf(sbuffer,"%s",temp_buffer);  
+                  perror("Can't open list file. \n"); 
+                  sprintf(sbuffer,"450 Requested file action not taken. \r\n");
+                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                 }else {
+                    sprintf(sbuffer, "125 Transferring... \r\n");   
+                    bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
+                    printf("Transferring...\n"); 
+                    char temp_buffer[100];  
+                    while (!feof(fin))
+                      temp_buffer[i++] = fgetc(fin);
+                      temp_buffer[i-1] = '\0'; 
+                      sprintf(sbuffer,"%s",temp_buffer);  
 
-                 if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
-                 else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
-                  
-                 if(fclose(fin) != 0) {
-                   perror("Can't close list file. "); 
-                 }   
-                 // sprintf(sbuffer, "226 Transfer completed... \r\n");   
-                 // bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
-                 printf("Transfer completed\n");   
-                 system("rm tmp.txt");   
-                         
-                //sy_error=0;   
-              }   
-//RETR   
-          if (strncmp(rbuffer,"RETR",4)==0)  {   
-             printf("RETR mode.\r\n");   
-             sprintf(sbuffer, "150 RETR file. Transfering....\r\n");    
-             bytes = send(ns, sbuffer, strlen(sbuffer), 0);    
-            int i=5,k=0;   
-            char filename[10],ch[50];   
-            // identify the filename from rbuffer after the word "RETR "   
-            while(1)    
-            {   
-                   
-                filename[k]=rbuffer[i];   
-             if (rbuffer[i] == '\0') {    
-                    filename[k] = '\0';   
-                    break; }    
-                  i++;   
-                  k++;}   
-                     
-             char *p_filename=filename;        
-             FILE *fp=fopen(p_filename,"r");   
-            if (fp==NULL)   
-             { sprintf(sbuffer, "Sorry, cannot open %s. Please try again.\n",filename);   
-               bytes = send(ns, sbuffer, strlen(sbuffer), 0);      
-               }   
-                
-             else   
-              {   
-               printf("The file %s found,ready to transfer.\n",filename);   
-                  
-              while (!feof(fp))   
-                {   
-                 fgets(ch,100,fp);   
-                    sprintf(sbuffer,"%s \r\n",ch);   
                     if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
-                      else send(s_data_port, sbuffer, strlen(sbuffer), 0);     
-                 }   
-              fclose(fp);   
-              sprintf(sbuffer, "226 Transfer completed... \r\n");   
-                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                  }   
-                //CLOSE the ns_data SOCKET or data port SOCKET   
-                if(port_connect==0)    
-                  {   
-                      close(ns_data);   
-                      sprintf(sbuffer,"226 Close the data socket... \r\n");   
-                     bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                      ns_data = socket(AF_INET, SOCK_STREAM, 0);   
-                   }   
-                else   
-                  {    
-                   close(s_data_port);               
-                   sprintf(sbuffer,"226 Close the port connection... \r\n");   
-                   bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-                   s_data_port = socket(AF_INET, SOCK_STREAM, 0);   
-                  }                    
-                sy_error=0;  
+                    else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
+                    
+                    if(fclose(fin) != 0) {
+                      perror("Can't close list file. \n"); 
+                    }   
+                     // sprintf(sbuffer, "226 Transfer completed... \r\n");   
+                     // bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
+                     printf("Transfer completed\n");   
+                     system("rm tmp.txt");   
+                  }       
+                //sy_error=0;   
               }   
 
          //ACCESS
-          }else if ((user_ok == 0 && pass_ok == 0)) {
+        } else if ((user_ok == 0 && pass_ok == 0)) {
             printf("Unauthorised access...\n");
             sprintf(sbuffer, "332 Please log in.\n");   
             bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
@@ -344,7 +332,8 @@ int main(int argc, char *argv[]) {
               bytes = send(ns, sbuffer, strlen(sbuffer), 0);       
                }   
            
-        } // end of while loop 2   
+        } // end of while loop 2 
+        printf("Outside loop 2\n");  
    
       //CLOSE CONTROL SOCKET   
         close(ns);    
