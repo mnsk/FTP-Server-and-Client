@@ -17,7 +17,7 @@
 //Defines   
 #define CONTROL_PORT 1221
 #define DATA_PORT 1220
-#define SIZE 80
+#define SIZE 20000
    
 char sbuffer[SIZE],rbuffer[SIZE],userinfo[10];//send and receive buffers   
 int n,bytes;//counters   
@@ -67,8 +67,9 @@ int main(int argc, char *argv[]) {
 //LISTEN   
        listen(s,5);   
        listen(s_data,5);    
-        addrlen = sizeof(remoteaddr);   
-//ACCEPT main connection (control connection)   
+        addrlen = sizeof(remoteaddr); 
+
+//ACCEPT main connection (control connection) 
         ns = accept(s,(struct sockaddr *)(&remoteaddr),&addrlen);   
        // if (ns == INVALID_SOCKET) break;   
         
@@ -168,7 +169,7 @@ int main(int argc, char *argv[]) {
                // sy_error=0;   
                }   
                       
-//PASV (need to change the ip address)  
+//PASV (Client ignores the firsy four digit)
              if (strncmp(rbuffer,"PASV",4)==0)  {   
                  printf("Passive mode \n");   
                //227 has a strange format, for IP 127.0.0.1 and port DATA_PORT   
@@ -177,7 +178,7 @@ int main(int argc, char *argv[]) {
                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
                //open a new connection on port DATA_PORT   
                  ns_data = accept(s_data,(struct sockaddr *)(&remoteaddr_data),&addrlen);   
-                 printf("connected to      %s at port %d \n",inet_ntoa(remoteaddr_data.sin_addr),ntohs(local_data_addr.sin_port));
+                 printf("connected to %s at port %d \n",inet_ntoa(remoteaddr_data.sin_addr),ntohs(local_data_addr.sin_port));
                  sprintf(sbuffer, "225 Passive Mode (%d,%d,%d,%d,%d,%d) \r\n",127,0,0,1,(DATA_PORT>>8),(DATA_PORT & 0x00FF));   
                  bytes = send(ns_data, sbuffer, strlen(sbuffer), 0);   
                 // sy_error=0;   
@@ -186,20 +187,22 @@ int main(int argc, char *argv[]) {
 //PORT    
 //Specifies client IP and port to which the server should connect for the next file transfer.   
             if (strncmp(rbuffer,"PORT",4)==0) {   
-            int conect_port[2];   
+            int conect_port[1];   
             int remote_ip[4], port_dec;   
             char ip_char[40];   
             port_connect=1;   
-            printf("Using port mode, the client is waiting for connection \n");   
+            printf("Using port mode, the client is waiting for connection \n"); 
+            sprintf(sbuffer, "150 Starting connection... \r\n");   
+            bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
             //translate the ip and port from character to decimal number   
-            sscanf(rbuffer, "PORT %d,%d,%d,%d,%d,%d",&remote_ip[0],&remote_ip[1],&remote_ip[2],&remote_ip[3],&conect_port[0],&conect_port[1]);   
+            sscanf(rbuffer, "PORT %d,%d,%d,%d,%d",&remote_ip[0],&remote_ip[1],&remote_ip[2],&remote_ip[3],&conect_port[0]);//,&conect_port[1]);   
             sprintf(ip_char, "%d.%d.%d.%d", remote_ip[0], remote_ip[1], remote_ip[2],remote_ip[3]);    
             local_data_addr_port.sin_family=AF_INET;       
             //change the format of port to be one decimal number   
             local_data_addr_port.sin_addr.s_addr=inet_addr(ip_char);   
             port_dec=conect_port[0];   
-            port_dec=port_dec << 8;   
-            port_dec=port_dec+conect_port[1];   
+            // port_dec=port_dec << 8;   
+            // port_dec=port_dec+conect_port[1];   
             printf("The client IP is %s, connect port is %d\n",ip_char,port_dec);   
             local_data_addr_port.sin_port=htons(port_dec);   
             if (connect(s_data_port, (struct sockaddr *)&local_data_addr_port,(int) sizeof(struct sockaddr)) != 0){   
