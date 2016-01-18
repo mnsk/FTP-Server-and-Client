@@ -171,7 +171,8 @@ int main(int argc, char *argv[]) {
                       
 //PASV (Client ignores the firsy four digit)
              if (strncmp(rbuffer,"PASV",4)==0)  {   
-                 printf("Passive mode \n");   
+                 printf("Passive mode \n"); 
+                 port_connect=0;  
                //227 has a strange format, for IP 127.0.0.1 and port DATA_PORT   
                //the format, where a1.a2.a3.a4 is the IP address and p1*256+p2 is the port number.So it is!     
                  sprintf(sbuffer, "227 Passive Mode (%d,%d,%d,%d,%d,%d)\r\n",127,0,0,1,(DATA_PORT>>8),(DATA_PORT & 0x00FF));   
@@ -243,21 +244,18 @@ int main(int argc, char *argv[]) {
                     temp_buffer[i++] = fgetc(fin);
                     temp_buffer[i-1] = '\0'; 
                     sprintf(sbuffer,"%s",temp_buffer); 
-                    printf("Content\n%s\n",sbuffer); 
+                   // printf("Content\n%s\n",sbuffer); 
 
-               if (port_connect==0) {send(ns_data, sbuffer, strlen(sbuffer), 0); printf("here\n");}   
+               if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);  
                else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
                 
                if(fclose(fin) != 0) {
                  perror("Can't close Retr file. "); 
-               } 
-                printf("here2\n");    
+               }    
                // sprintf(sbuffer,"226 File transfer completed... \r\n");   
                 //bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
-                printf("here3\n");
             }
               //sy_error=0;
-              printf("here4\n");  
           }   
 
    

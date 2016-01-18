@@ -143,8 +143,9 @@ int main(int argc, char *argv[]) {
   				      return 0;
   			     }
 
-      			recv(s_data,rbuffer,SIZE,0);
-            printf("%s",rbuffer );
+              port_connect=0;
+      			  recv(s_data,rbuffer,SIZE,0);
+              printf("%s",rbuffer );
           }else
       			printf("%s",rbuffer );
 
@@ -169,7 +170,8 @@ int main(int argc, char *argv[]) {
           if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
             // printf("%s\n",rbuffer );
             memset(rbuffer, 0, SIZE);
-            recv(s_data,rbuffer,SIZE,0);
+            if (port_connect==0) recv(s_data,rbuffer,SIZE,0);
+            else recv(ns_data_port,rbuffer,SIZE,0);
             printf("%s\n",rbuffer );
             // memset(rbuffer, 0, SIZE);
             // recv(s,rbuffer,SIZE,0);
@@ -184,32 +186,34 @@ int main(int argc, char *argv[]) {
             if (strncmp(sbuffer,"PORT",4)==0) {   
                 int connect_port;  
                 int remote_ip[4], port_dec;   
-                char ip_char[40];   
+                char ip_char[40]; 
+
+                sscanf(sbuffer,"PORT %d,%d,%d,%d,%d",&remote_ip[0],&remote_ip[1],&remote_ip[2],&remote_ip[3],&connect_port);   
+                sprintf(ip_char, "%d.%d.%d.%d", remote_ip[0], remote_ip[1], remote_ip[2],remote_ip[3]); 
+                printf("The ip is %s\n",ip_char);
+                printf("port %d\n",connect_port);
+                //change the format of port to be one decimal number   
+                port_dec=connect_port;   
+                local_data_addr_port.sin_family = AF_INET;
+                local_data_addr_port.sin_addr.s_addr = inet_addr(ip_char);
+                local_data_addr_port.sin_port = htons(port_dec);
+
+                if (bind(s_data_port,(struct sockaddr *)(&local_data_addr_port),sizeof(local_data_addr_port)) < 0) {   
+                    printf("Bind failed!\n");
+                    break;    
+                }
+
+                listen(s_data_port,5);  
 
                 bytes = send(s, sbuffer, strlen(sbuffer), 0);  
                 recv(s,rbuffer,SIZE,0);
                 if((strncmp(rbuffer,"332",3)!=0)) {
                   printf("%s",rbuffer );
 
-                  sscanf(sbuffer,"PORT %d,%d,%d,%d,%d",&remote_ip[0],&remote_ip[1],&remote_ip[2],&remote_ip[3],&connect_port);   
-                  sprintf(ip_char, "%d.%d.%d.%d", remote_ip[0], remote_ip[1], remote_ip[2],remote_ip[3]); 
-                  printf("The ip is %s\n",ip_char);
-                  printf("port %d\n",connect_port);
-                  //change the format of port to be one decimal number   
-                  port_dec=connect_port;   
-                  local_data_addr_port.sin_family = AF_INET;
-                  local_data_addr_port.sin_addr.s_addr = inet_addr(ip_char);
-                  local_data_addr_port.sin_port = htons(port_dec);
-
-                  if (bind(s_data_port,(struct sockaddr *)(&local_data_addr_port),sizeof(local_data_addr_port)) < 0) {   
-                      printf("Bind failed!\n");
-                      break;    
-                  }
-
-                  listen(s_data_port,5);
-
                   ns_data_port = accept(s_data_port,(struct sockaddr *)(&remoteaddr_data),&addrlen);  
                   printf("connected to %s at port %d \n",inet_ntoa(remoteaddr_data.sin_addr),ntohs(local_data_addr.sin_port));
+
+                  port_connect=1;
 
                   recv(s,rbuffer,SIZE,0);
                   printf("%s\n",rbuffer);
@@ -233,16 +237,16 @@ int main(int argc, char *argv[]) {
            printf("%s",rbuffer );
 
            memset(rbuffer, 0, SIZE);
-           bytes = recv(s_data,rbuffer,SIZE,0);
+           if (port_connect==0) bytes=recv(s_data,rbuffer,SIZE,0);
+           else bytes=recv(ns_data_port,rbuffer,SIZE,0);
            if ( bytes <= 0 ) break;
 
-           printf("Content \n%s\n",rbuffer);
+           //printf("Content \n%s\n",rbuffer);
 
            FILE *fout = fopen(filename,"w");
            if(fout == NULL){
               perror("Can't create file.\n"); 
            }else {
-            printf("here2\n");
             while(rbuffer[i] != '\0') {
               ch = rbuffer[i];
               putc(ch,fout);
@@ -251,10 +255,8 @@ int main(int argc, char *argv[]) {
             fclose(fout);
 
            }
-           printf("here3\n");
            memset(rbuffer, 0, SIZE);
           // recv(s,rbuffer,SIZE,0);
-           printf("here4\n");
           // printf("%s\n",rbuffer );
         } else
             printf("%s\n",rbuffer );
