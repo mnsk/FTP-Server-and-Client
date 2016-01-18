@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
       //COMMAND CHECKING
 
         if(strncmp(rbuffer,"USER",4)  && strncmp(rbuffer,"PASS",4)    &&  strncmp(rbuffer,"SYST",4)
-                &&strncmp(rbuffer,"PORT",4)   && strncmp(rbuffer,"PASV",4)   &&  strncmp(rbuffer,"RETR",4)
+                &&strncmp(rbuffer,"PORT",4)   && strncmp(rbuffer,"PASV",4)   &&  strncmp(rbuffer,"RETR",4)    &&  strncmp(rbuffer,"CWD",3)
                 &&strncmp(rbuffer,"LIST",4)   && strncmp(rbuffer,"PWD",3)    &&  strncmp(rbuffer,"QUIT",4))
         {
             sy_error = 1; //user_ok=1; pass_ok=1;    
@@ -269,7 +269,19 @@ int main(int argc, char *argv[]) {
 
 //CWD
              if (strncmp(rbuffer,"CWD",3)==0) {
-                
+                char pathname[20];
+                printf("Changing directory...\n");
+                sscanf(rbuffer+4,"%s",pathname);
+                if(chdir(pathname) == 0) {
+                  sprintf(sbuffer,"212 Directory changed successfully\r\n");
+                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                  printf("Working directory changed to %s \n",pathname);
+                }
+                else {
+                  sprintf(sbuffer,"501 Fail to change directory.\r\n");
+                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                  printf("Fail to change directory.\n");
+                }
              }  
 
    
