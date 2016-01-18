@@ -110,8 +110,8 @@ int main(int argc, char *argv[]) {
       //COMMAND CHECKING
 
         if(strncmp(rbuffer,"USER",4)  && strncmp(rbuffer,"PASS",4)    &&  strncmp(rbuffer,"SYST",4)
-                &&strncmp(rbuffer,"PORT",4)   && strncmp(rbuffer,"PASV",4)    &&  strncmp(rbuffer,"RETR",4)
-                &&strncmp(rbuffer,"LIST",4)   &&  strncmp(rbuffer,"QUIT",4))
+                &&strncmp(rbuffer,"PORT",4)   && strncmp(rbuffer,"PASV",4)   &&  strncmp(rbuffer,"RETR",4)
+                &&strncmp(rbuffer,"LIST",4)   && strncmp(rbuffer,"PWD",3)    &&  strncmp(rbuffer,"QUIT",4))
         {
             sy_error = 1; //user_ok=1; pass_ok=1;    
         } else {
@@ -133,9 +133,10 @@ int main(int argc, char *argv[]) {
                   user_ok=1;
                 }
                 else {
-                  printf("USER match failed...\n");
+                  printf("USER match failed. Please log in again.\n");
                   sprintf(sbuffer,"530 User doesn't exist \r\n");
                   user_ok = 0;
+                  pass_ok = 0;
                 }    
                 bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
                // sy_error=0;   
@@ -151,9 +152,10 @@ int main(int argc, char *argv[]) {
                   pass_ok=1;
                 }
                 else {
-                  printf("PASS match failed...\n");
+                  printf("PASS match failed. Please log in again.\n");
                   sprintf(sbuffer,"530 Password incorrect \r\n");
                   pass_ok = 0;
+                  user_ok = 0;
                 }    
                 bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
                // sy_error=0;      
@@ -172,7 +174,11 @@ int main(int argc, char *argv[]) {
 //PASV (Client ignores the firsy four digit)
              if (strncmp(rbuffer,"PASV",4)==0)  {   
                  printf("Passive mode \n"); 
-                 port_connect=0;  
+                 
+                 if(port_connect==1)
+                 close(s_data_port);
+
+                 port_connect=0;
                //227 has a strange format, for IP 127.0.0.1 and port DATA_PORT   
                //the format, where a1.a2.a3.a4 is the IP address and p1*256+p2 is the port number.So it is!     
                  sprintf(sbuffer, "227 Passive Mode (%d,%d,%d,%d,%d,%d)\r\n",127,0,0,1,(DATA_PORT>>8),(DATA_PORT & 0x00FF));   
@@ -191,7 +197,9 @@ int main(int argc, char *argv[]) {
             int conect_port[1];   
             int remote_ip[4], port_dec;   
             char ip_char[40];   
-            port_connect=1;   
+            if(port_connect==0)
+            close(ns_data); 
+            port_connect=1; 
             printf("Using port mode, the client is waiting for connection \n"); 
             sprintf(sbuffer, "150 Starting connection... \r\n");   
             bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
@@ -291,7 +299,42 @@ int main(int argc, char *argv[]) {
                      system("rm tmp.txt");   
                   }       
                 //sy_error=0;   
-              }   
+              } 
+
+//PWD                 
+             if (strncmp(rbuffer,"PWD",3)==0)  {  
+                 int i = 0; 
+                 printf("Equivalent to pwd \n");   
+                 system("pwd > tmp.txt");    
+                 FILE *fin=fopen("tmp.txt","r");  
+                 if(fin == NULL){
+                  perror("Can't open list file. \n"); 
+                  sprintf(sbuffer,"450 Requested file action not taken. \r\n");
+                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                 }else {
+                    sprintf(sbuffer, "125 Transferring... \r\n");   
+                    bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
+                    printf("Transferring...\n"); 
+                    char temp_buffer[100];  
+                    while (!feof(fin))
+                      temp_buffer[i++] = fgetc(fin);
+                      temp_buffer[i-1] = '\0'; 
+                      sprintf(sbuffer,"%s",temp_buffer);  
+
+                    if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
+                    else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
+                    
+                    if(fclose(fin) != 0) {
+                      perror("Can't close list file. \n"); 
+                    }   
+                     // sprintf(sbuffer, "226 Transfer completed... \r\n");   
+                     // bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
+                     printf("Transfer completed\n");   
+                     system("rm tmp.txt");   
+                  }       
+                //sy_error=0;   
+              }
+
 
          //ACCESS
         } else if ((user_ok == 0 && pass_ok == 0)) {

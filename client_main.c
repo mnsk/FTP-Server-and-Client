@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	printf("Successfully connected to main socket.\n");
-	printf("Supported commands are: USER, PASS, SYST, PASV, PORT, LIST, RETR, QUIT.\n");
+	printf("Supported commands are: USER, PASS, SYST, PWD, PASV, PORT, LIST, RETR, QUIT.\n");
 
   fflush(stdout);
 	bytes = recv(s,rbuffer,SIZE,0);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     if(strncmp(sbuffer,"USER",4)  && strncmp(sbuffer,"PASS",4)    &&  strncmp(sbuffer,"SYST",4)
             &&strncmp(sbuffer,"PORT",4)   && strncmp(sbuffer,"PASV",4)    &&  strncmp(sbuffer,"RETR",4)
-            &&strncmp(sbuffer,"LIST",4)   &&  strncmp(sbuffer,"QUIT",4))
+            &&strncmp(sbuffer,"LIST",4)   && strncmp(sbuffer,"PWD",3)     &&  strncmp(sbuffer,"QUIT",4))
     {
             bytes = send(s, sbuffer, strlen(sbuffer), 0);
             recv(s,rbuffer,SIZE,0);
@@ -117,7 +117,10 @@ int main(int argc, char *argv[]) {
   	    if (strncmp(sbuffer,"PASV",4)==0)  {   
               int conect_port[2];  
               int remote_ip[4], port_dec;   
-              char ip_char[40];   
+              char ip_char[40]; 
+
+              if(port_connect==1)
+              close(ns_data_port);  
 
               bytes = send(s, sbuffer, strlen(sbuffer), 0);  
               recv(s,rbuffer,SIZE,0);
@@ -181,6 +184,25 @@ int main(int argc, char *argv[]) {
             sy_error=0; 
         }
 
+      //PWD  
+                         
+       if (strncmp(sbuffer,"PWD",3)==0)  {   
+          bytes = send(s, sbuffer, strlen(sbuffer), 0);  
+          recv(s,rbuffer,SIZE,0);
+          if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
+            // printf("%s\n",rbuffer );
+            memset(rbuffer, 0, SIZE);
+            if (port_connect==0) recv(s_data,rbuffer,SIZE,0);
+            else recv(ns_data_port,rbuffer,SIZE,0);
+            printf("%s\n",rbuffer );
+            // memset(rbuffer, 0, SIZE);
+            // recv(s,rbuffer,SIZE,0);
+            // printf("%s\n",rbuffer );
+          }else
+            printf("%s\n",rbuffer );
+            sy_error=0; 
+        }        
+
       //PORT    
       //Specifies client IP and port to which the server should connect for the next file transfer.   
             if (strncmp(sbuffer,"PORT",4)==0) {   
@@ -188,35 +210,38 @@ int main(int argc, char *argv[]) {
                 int remote_ip[4], port_dec;   
                 char ip_char[40]; 
 
+                if(port_connect==0)
+                close(s_data);
+
                 sscanf(sbuffer,"PORT %d,%d,%d,%d,%d",&remote_ip[0],&remote_ip[1],&remote_ip[2],&remote_ip[3],&connect_port);   
                 sprintf(ip_char, "%d.%d.%d.%d", remote_ip[0], remote_ip[1], remote_ip[2],remote_ip[3]); 
-                printf("The ip is %s\n",ip_char);
-                printf("port %d\n",connect_port);
+                //printf("The ip is %s\n",ip_char);
+                //printf("port %d\n",connect_port);
                 //change the format of port to be one decimal number   
                 port_dec=connect_port;   
                 local_data_addr_port.sin_family = AF_INET;
                 local_data_addr_port.sin_addr.s_addr = inet_addr(ip_char);
                 local_data_addr_port.sin_port = htons(port_dec);
 
-                if (bind(s_data_port,(struct sockaddr *)(&local_data_addr_port),sizeof(local_data_addr_port)) < 0) {   
-                    printf("Bind failed!\n");
-                    break;    
-                }
-
-                listen(s_data_port,5);  
-
                 bytes = send(s, sbuffer, strlen(sbuffer), 0);  
                 recv(s,rbuffer,SIZE,0);
                 if((strncmp(rbuffer,"332",3)!=0)) {
                   printf("%s",rbuffer );
+
+                   if (bind(s_data_port,(struct sockaddr *)(&local_data_addr_port),sizeof(local_data_addr_port)) < 0) {   
+                    printf("Bind failed!\n");
+                    break;    
+                   }
+
+                  listen(s_data_port,5);  
 
                   ns_data_port = accept(s_data_port,(struct sockaddr *)(&remoteaddr_data),&addrlen);  
                   printf("connected to %s at port %d \n",inet_ntoa(remoteaddr_data.sin_addr),ntohs(local_data_addr.sin_port));
 
                   port_connect=1;
 
-                  recv(s,rbuffer,SIZE,0);
-                  printf("%s\n",rbuffer);
+                  //recv(s,rbuffer,SIZE,0);
+                  //printf("%s\n",rbuffer);
                  }else
                     printf("%s\n",rbuffer );
                     sy_error=0;
