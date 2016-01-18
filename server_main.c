@@ -264,14 +264,26 @@ int main(int argc, char *argv[]) {
                 //bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
             }
               //sy_error=0;
-          }   
+          } 
+
+
+//CWD
+             if (strncmp(rbuffer,"CWD",3)==0) {
+                
+             }  
 
    
-//LIST                 
-             if (strncmp(rbuffer,"LIST",4)==0)  {  
+//LIST n PWD              
+             if (strncmp(rbuffer,"LIST",4)==0 || strncmp(rbuffer,"PWD",3)==0)  {  
                  int i = 0; 
-                 printf("Equivalent to dir \n");   
-                 system("dir > tmp.txt");    
+                 if(strncmp(rbuffer,"LIST",4)==0) {
+                    printf("Equivalent to dir \n");   
+                    system("dir > tmp.txt");  
+                  }
+                  else {
+                    printf("Equivalent to pwd \n");   
+                    system("pwd > tmp.txt");  
+                  }  
                  FILE *fin=fopen("tmp.txt","r");  
                  if(fin == NULL){
                   perror("Can't open list file. \n"); 
@@ -300,41 +312,6 @@ int main(int argc, char *argv[]) {
                   }       
                 //sy_error=0;   
               } 
-
-//PWD                 
-             if (strncmp(rbuffer,"PWD",3)==0)  {  
-                 int i = 0; 
-                 printf("Equivalent to pwd \n");   
-                 system("pwd > tmp.txt");    
-                 FILE *fin=fopen("tmp.txt","r");  
-                 if(fin == NULL){
-                  perror("Can't open list file. \n"); 
-                  sprintf(sbuffer,"450 Requested file action not taken. \r\n");
-                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);
-                 }else {
-                    sprintf(sbuffer, "125 Transferring... \r\n");   
-                    bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
-                    printf("Transferring...\n"); 
-                    char temp_buffer[100];  
-                    while (!feof(fin))
-                      temp_buffer[i++] = fgetc(fin);
-                      temp_buffer[i-1] = '\0'; 
-                      sprintf(sbuffer,"%s",temp_buffer);  
-
-                    if (port_connect==0) send(ns_data, sbuffer, strlen(sbuffer), 0);   
-                    else send(s_data_port, sbuffer, strlen(sbuffer), 0);   
-                    
-                    if(fclose(fin) != 0) {
-                      perror("Can't close list file. \n"); 
-                    }   
-                     // sprintf(sbuffer, "226 Transfer completed... \r\n");   
-                     // bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
-                     printf("Transfer completed\n");   
-                     system("rm tmp.txt");   
-                  }       
-                //sy_error=0;   
-              }
-
 
          //ACCESS
         } else if ((user_ok == 0 && pass_ok == 0)) {

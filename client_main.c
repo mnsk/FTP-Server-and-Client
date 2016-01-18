@@ -165,9 +165,9 @@ int main(int argc, char *argv[]) {
          }   
 
 
-      //LIST   
+      //LIST && PWD  
                          
-       if (strncmp(sbuffer,"LIST",4)==0)  {   
+       if (strncmp(sbuffer,"LIST",4)==0 || strncmp(sbuffer,"PWD",3)==0)  {   
           bytes = send(s, sbuffer, strlen(sbuffer), 0);  
           recv(s,rbuffer,SIZE,0);
           if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
@@ -182,26 +182,7 @@ int main(int argc, char *argv[]) {
           }else
             printf("%s\n",rbuffer );
             sy_error=0; 
-        }
-
-      //PWD  
-                         
-       if (strncmp(sbuffer,"PWD",3)==0)  {   
-          bytes = send(s, sbuffer, strlen(sbuffer), 0);  
-          recv(s,rbuffer,SIZE,0);
-          if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
-            // printf("%s\n",rbuffer );
-            memset(rbuffer, 0, SIZE);
-            if (port_connect==0) recv(s_data,rbuffer,SIZE,0);
-            else recv(ns_data_port,rbuffer,SIZE,0);
-            printf("%s\n",rbuffer );
-            // memset(rbuffer, 0, SIZE);
-            // recv(s,rbuffer,SIZE,0);
-            // printf("%s\n",rbuffer );
-          }else
-            printf("%s\n",rbuffer );
-            sy_error=0; 
-        }        
+        }      
 
       //PORT    
       //Specifies client IP and port to which the server should connect for the next file transfer.   
