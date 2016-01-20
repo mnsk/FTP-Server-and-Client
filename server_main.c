@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
                 if (rbuffer[n] != '\r') n++; /*ignore CR's*/   
             } // end of while loop 3    
              if ( bytes <= 0 ) break;
-            printf("#The Server receives:# '%s' from client(%d) \n",rbuffer,getpid());  
+            printf("\n#The Server receives:# '%s' from client(%d) \n",rbuffer,getpid());  
 
       //COMMAND CHECKING
 
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
           if (strncmp(rbuffer,"RETR",4)==0)  {  
              int i = 0; 
              printf("RETR mode.\r\n");         
-             char filename[20],temp_buffer[100]; 
+             char filename[40],temp_buffer[SIZE]; 
              sscanf(rbuffer+5,"%s",filename);
 
              FILE *fin=fopen(filename,"r"); 
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
 //STOR  
           if (strncmp(rbuffer,"STOR",4)==0)  {  
              printf("STOR mode.\r\n");         
-             char ch,filename[20],temp_buffer[100]; 
+             char ch,filename[20];
              int i = 0;
              sscanf(rbuffer+5,"%s",filename);
 

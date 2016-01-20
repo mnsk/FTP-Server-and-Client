@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
                          
        if (strncmp(sbuffer,"STOR",4)==0)  {  
 
-          char filename[20],temp_buffer[100];
+          char filename[40],temp_buffer[SIZE];
           int i = 0;
           bytes = send(s, sbuffer, strlen(sbuffer), 0); 
           sscanf(sbuffer+5,"%s",filename); 
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
                          
        if (strncmp(sbuffer,"RETR",4)==0)  {  
 
-          char ch,filename[20],temp_buffer[100]; 
+          char ch,filename[40];
           int i = 0;
           bytes = send(s, sbuffer, strlen(sbuffer), 0); 
           sscanf(sbuffer+5,"%s",filename); 
