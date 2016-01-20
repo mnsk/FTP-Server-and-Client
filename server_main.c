@@ -20,7 +20,7 @@
 #define SIZE 20000
    
 char sbuffer[SIZE],rbuffer[SIZE],userinfo[10];//send and receive buffers   
-int n,bytes;//counters   
+int pid,n,bytes;//counters   
 int ns,ns_data;//sockets, ns is a new socket (on CONTROL_PORT) and ns_data is a new socket for data (DATA_PORT)   
 struct sockaddr_in remoteaddr, remoteaddr_data;   
 int port_connect=0;  
@@ -71,18 +71,26 @@ int main(int argc, char *argv[]) {
 
 //ACCEPT main connection (control connection) 
         ns = accept(s,(struct sockaddr *)(&remoteaddr),&addrlen);   
-       // if (ns == INVALID_SOCKET) break;   
+       // if (ns == INVALID_SOCKET) break;  
+
+       
+  
         
         memset(sbuffer, 0, SIZE);
         user_ok=0; pass_ok=0;
 
-        printf("connected to      %s at port %d \n",inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));   
+        //printf("connected to %s at port %d \n",inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));   
 
 //Respond with welcome message, FTP client requires those   
         sprintf(sbuffer,"200 Welcome \r\n");   
         bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
         sprintf(sbuffer,"530 Log in \r\n");   
         bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
+
+        pid = fork();
+        if(pid == 0) {
+
+          printf("connected to child \"%d\" with %s at port %d \n",getpid(),inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));
 
 //INFINITE LOOP   
         while (1) // while loop 2   
@@ -105,7 +113,7 @@ int main(int argc, char *argv[]) {
                 if (rbuffer[n] != '\r') n++; /*ignore CR's*/   
             } // end of while loop 3    
              if ( bytes <= 0 ) break;
-            printf("#The Server receives:# '%s' from client \n", rbuffer);  
+            printf("#The Server receives:# '%s' from client(%d) \n",rbuffer,getpid());  
 
       //COMMAND CHECKING
 
@@ -214,7 +222,8 @@ int main(int argc, char *argv[]) {
             // port_dec=port_dec << 8;   
             // port_dec=port_dec+conect_port[1];   
             printf("The client IP is %s, connect port is %d\n",ip_char,port_dec);   
-            local_data_addr_port.sin_port=htons(port_dec);   
+            local_data_addr_port.sin_port=htons(port_dec); 
+            sleep(1);  
             if (connect(s_data_port, (struct sockaddr *)&local_data_addr_port,(int) sizeof(struct sockaddr)) != 0){   
                 printf("try to connect to %s at port %d\n",inet_ntoa(local_data_addr_port.sin_addr),ntohs(local_data_addr_port.sin_port));   
                 sprintf(sbuffer, "425 Can't open a port connection \r\n");   
@@ -392,8 +401,10 @@ int main(int argc, char *argv[]) {
    
       //CLOSE CONTROL SOCKET   
         close(ns);    
-        printf("disconnected from %s at port %d, close control socket.\n",inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));   
-    
+        printf("disconnected from child \"%d\" with %s at port %d, close control socket.\n",getpid(),inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));   
+  
+  }//bracket for child "if"
+
  } // end of while loop 1   
 //CLOSE WELCOME SOCKET   
     close(s);   
