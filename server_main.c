@@ -23,8 +23,8 @@ char sbuffer[SIZE],rbuffer[SIZE],userinfo[10];//send and receive buffers
 int n,bytes;//counters   
 int ns,ns_data;//sockets, ns is a new socket (on CONTROL_PORT) and ns_data is a new socket for data (DATA_PORT)   
 struct sockaddr_in remoteaddr, remoteaddr_data;   
-int port_connect=0;   
-   
+int port_connect=0;  
+
 //MAIN   
 int main(int argc, char *argv[]) {   
     struct sockaddr_in localaddr;//local address structure   
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
         if(strncmp(rbuffer,"USER",4)  && strncmp(rbuffer,"PASS",4)    &&  strncmp(rbuffer,"SYST",4)
                 &&strncmp(rbuffer,"PORT",4)   && strncmp(rbuffer,"PASV",4)   &&  strncmp(rbuffer,"RETR",4)    &&  strncmp(rbuffer,"CWD",3)
-                &&strncmp(rbuffer,"LIST",4)   && strncmp(rbuffer,"PWD",3)    &&  strncmp(rbuffer,"QUIT",4))
+                &&strncmp(rbuffer,"LIST",4)   && strncmp(rbuffer,"PWD",3)    &&  strncmp(rbuffer,"MKD",3)     &&  strncmp(rbuffer,"QUIT",4))
         {
             sy_error = 1; //user_ok=1; pass_ok=1;    
         } else {
@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
                 if(strncmp(userinfo,"batch1",6) == 0) {
                   printf("PASS for USER \"batch1\" accepted.\n");
                   sprintf(sbuffer,"230 Logged in \r\n");
+                  if(user_ok==1)
                   pass_ok=1;
                 }
                 else {
@@ -281,6 +282,27 @@ int main(int argc, char *argv[]) {
                   sprintf(sbuffer,"501 Fail to change directory.\r\n");
                   bytes = send(ns, sbuffer, strlen(sbuffer), 0);
                   printf("Fail to change directory.\n");
+                }
+             }  
+
+
+//MKD
+             if (strncmp(rbuffer,"MKD",3)==0) {
+                char dirname[20];
+                char command[20] = "mkdir -p ";    //for nested directories
+                printf("Making directory...\n");
+                sscanf(rbuffer+4,"%s",dirname);
+                strcat(command,dirname);
+                printf("Directory %s\n",command);
+                if(system(command) != -1) {
+                  sprintf(sbuffer,"212 Directory created successfully\r\n");
+                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                  printf("%s folder created. \n",rbuffer+4);
+                }
+                else {
+                  sprintf(sbuffer,"501 Fail to create directory.\r\n");
+                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                  printf("Fail to create directory.\n");
                 }
              }  
 

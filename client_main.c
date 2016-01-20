@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	printf("Successfully connected to main socket.\n");
-	printf("Supported commands are: USER, PASS, SYST, PWD, PASV, PORT, LIST, RETR, QUIT.\n");
+	printf("Supported commands are: USER, PASS, SYST, PWD, CWD, MKD, PASV, PORT, LIST, RETR, QUIT.\n");
 
   fflush(stdout);
 	bytes = recv(s,rbuffer,SIZE,0);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     if(strncmp(sbuffer,"USER",4)  && strncmp(sbuffer,"PASS",4)    &&  strncmp(sbuffer,"SYST",4)
             &&strncmp(sbuffer,"PORT",4)   && strncmp(sbuffer,"PASV",4)    &&  strncmp(sbuffer,"RETR",4)   &&  strncmp(sbuffer,"CWD",3)
-            &&strncmp(sbuffer,"LIST",4)   && strncmp(sbuffer,"PWD",3)     &&  strncmp(sbuffer,"QUIT",4))
+            &&strncmp(sbuffer,"LIST",4)   && strncmp(sbuffer,"PWD",3)     &&  strncmp(sbuffer,"MKD",3)    &&  strncmp(sbuffer,"QUIT",4))
     {
             bytes = send(s, sbuffer, strlen(sbuffer), 0);
             recv(s,rbuffer,SIZE,0);
@@ -170,7 +170,15 @@ int main(int argc, char *argv[]) {
             bytes = send(s, sbuffer, strlen(sbuffer), 0);  
             recv(s,rbuffer,SIZE,0);
             printf("%s\n",rbuffer );
-         }   
+         } 
+
+      //MKD  
+                          
+       if (strncmp(sbuffer,"MKD",3)==0)  {   
+            bytes = send(s, sbuffer, strlen(sbuffer), 0);  
+            recv(s,rbuffer,SIZE,0);
+            printf("%s\n",rbuffer );
+         }  
 
       //LIST && PWD  
                          
