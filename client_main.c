@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	printf("Successfully connected to main socket.\n");
-	printf("Supported commands are: USER, PASS, SYST, PWD, CWD, MKD, PASV, PORT, LIST, RETR, QUIT.\n");
+	printf("Supported commands are: USER, PASS, SYST, PWD, CWD, MKD, PASV, PORT, LIST, RETR, STOR, QUIT.\n");
 
   fflush(stdout);
 	bytes = recv(s,rbuffer,SIZE,0);
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 		printf("\nftp< ");
 		while((sbuffer[n++]=getchar())!='\n');
 
-    if(strncmp(sbuffer,"USER",4)  && strncmp(sbuffer,"PASS",4)    &&  strncmp(sbuffer,"SYST",4)
+    if(strncmp(sbuffer,"USER",4)  && strncmp(sbuffer,"PASS",4)    &&  strncmp(sbuffer,"SYST",4)     &&  strncmp(sbuffer,"STOR",4)
             &&strncmp(sbuffer,"PORT",4)   && strncmp(sbuffer,"PASV",4)    &&  strncmp(sbuffer,"RETR",4)   &&  strncmp(sbuffer,"CWD",3)
             &&strncmp(sbuffer,"LIST",4)   && strncmp(sbuffer,"PWD",3)     &&  strncmp(sbuffer,"MKD",3)    &&  strncmp(sbuffer,"QUIT",4))
     {
@@ -242,7 +242,51 @@ int main(int argc, char *argv[]) {
                     printf("%s\n",rbuffer );
                     sy_error=0;
 
-            }  
+            }
+
+      //STOR  
+                         
+       if (strncmp(sbuffer,"STOR",4)==0)  {  
+
+          char filename[20],temp_buffer[100];
+          int i = 0;
+          bytes = send(s, sbuffer, strlen(sbuffer), 0); 
+          sscanf(sbuffer+5,"%s",filename); 
+          //printf("filename %s\n",filename);
+
+          recv(s,rbuffer,SIZE,0);
+          if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
+           printf("%s",rbuffer );
+
+           FILE *fin=fopen(filename,"r"); 
+           if(fin == NULL)
+              {   
+                  perror("File not found.");
+                  continue;
+              } 
+            else   
+              {
+                
+               printf("The file %s found,ready to transfer.\n",filename);   
+
+                while (!feof(fin))
+                    temp_buffer[i++] = fgetc(fin);
+                    temp_buffer[i-1] = '\0'; 
+                    sprintf(sbuffer,"%s",temp_buffer); 
+                   // printf("Content\n%s\n",sbuffer); 
+
+               if (port_connect==0) send(s_data, sbuffer, strlen(sbuffer), 0);  
+               else send(ns_data_port, sbuffer, strlen(sbuffer), 0);   
+                
+               if(fclose(fin) != 0) {
+                 perror("Error in closing file\n. "); 
+               }    
+               
+             }
+
+            } else
+            printf("%s\n",rbuffer );
+       }         
 
       //RETR   
                          
@@ -252,7 +296,7 @@ int main(int argc, char *argv[]) {
           int i = 0;
           bytes = send(s, sbuffer, strlen(sbuffer), 0); 
           sscanf(sbuffer+5,"%s",filename); 
-          printf("filename %s\n",filename); 
+          //printf("filename %s\n",filename); 
           recv(s,rbuffer,SIZE,0);
           if((strncmp(rbuffer,"332",3)!=0) && (strncmp(rbuffer,"450",3)!=0)) {
            printf("%s",rbuffer );

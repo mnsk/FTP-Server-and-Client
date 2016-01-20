@@ -77,9 +77,7 @@ int main(int argc, char *argv[]) {
   
         
         memset(sbuffer, 0, SIZE);
-        user_ok=0; pass_ok=0;
-
-        //printf("connected to %s at port %d \n",inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));   
+        user_ok=0; pass_ok=0; 
 
 //Respond with welcome message, FTP client requires those   
         sprintf(sbuffer,"200 Welcome \r\n");   
@@ -90,7 +88,7 @@ int main(int argc, char *argv[]) {
         pid = fork();
         if(pid == 0) {
 
-          printf("connected to child \"%d\" with %s at port %d \n",getpid(),inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));
+        printf("------------connected to child \"%d\" with %s at port %d------------\n",getpid(),inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));
 
 //INFINITE LOOP   
         while (1) // while loop 2   
@@ -117,7 +115,7 @@ int main(int argc, char *argv[]) {
 
       //COMMAND CHECKING
 
-        if(strncmp(rbuffer,"USER",4)  && strncmp(rbuffer,"PASS",4)    &&  strncmp(rbuffer,"SYST",4)
+        if(strncmp(rbuffer,"USER",4)  && strncmp(rbuffer,"PASS",4)    &&  strncmp(rbuffer,"SYST",4)    &&  strncmp(rbuffer,"STOR",4)
                 &&strncmp(rbuffer,"PORT",4)   && strncmp(rbuffer,"PASV",4)   &&  strncmp(rbuffer,"RETR",4)    &&  strncmp(rbuffer,"CWD",3)
                 &&strncmp(rbuffer,"LIST",4)   && strncmp(rbuffer,"PWD",3)    &&  strncmp(rbuffer,"MKD",3)     &&  strncmp(rbuffer,"QUIT",4))
         {
@@ -277,6 +275,50 @@ int main(int argc, char *argv[]) {
           } 
 
 
+//STOR  
+          if (strncmp(rbuffer,"STOR",4)==0)  {  
+             printf("STOR mode.\r\n");         
+             char ch,filename[20],temp_buffer[100]; 
+             int i = 0;
+             sscanf(rbuffer+5,"%s",filename);
+
+             FILE *fout=fopen(filename,"w"); 
+             if(fout == NULL)
+                {   
+                    perror("File cant be created.\n");
+                    sprintf(sbuffer,"450 Requested file action not taken. \r\n");
+                    bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+                }
+                
+             else   
+              {
+                
+               printf("The file %s created,ready to receive.\n",filename);   
+               sprintf(sbuffer,"150 Receiving... \r\n");
+               bytes = send(ns, sbuffer, strlen(sbuffer), 0);
+
+               memset(rbuffer, 0, SIZE);
+               if (port_connect==0) bytes=recv(ns_data,rbuffer,SIZE,0);
+               else bytes=recv(s_data_port,rbuffer,SIZE,0);
+               if ( bytes <= 0 ) break;
+
+               while(rbuffer[i] != '\0') {
+                ch = rbuffer[i];
+                putc(ch,fout);
+                i++;
+                }  
+                
+               if(fclose(fout) != 0) {
+                 perror("Can't close STOR file. "); 
+               }    
+               // sprintf(sbuffer,"226 File transfer completed... \r\n");   
+                //bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
+               memset(rbuffer, 0, SIZE);
+            }
+              //sy_error=0;
+          } 
+
+
 //CWD
              if (strncmp(rbuffer,"CWD",3)==0) {
                 char pathname[20];
@@ -397,11 +439,11 @@ int main(int argc, char *argv[]) {
                }   
            
         } // end of while loop 2 
-        printf("Outside loop 2\n");  
+      //  printf("Outside loop 2\n");  
    
       //CLOSE CONTROL SOCKET   
         close(ns);    
-        printf("disconnected from child \"%d\" with %s at port %d, close control socket.\n",getpid(),inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));   
+        printf("-------disconnected from child \"%d\" with %s at port %d, close control socket-------\n",getpid(),inet_ntoa(remoteaddr.sin_addr),ntohs(localaddr.sin_port));   
   
   }//bracket for child "if"
 
