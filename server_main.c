@@ -80,10 +80,10 @@ int main(int argc, char *argv[]) {
         user_ok=0; pass_ok=0; 
 
 //Respond with welcome message, FTP client requires those   
-        sprintf(sbuffer,"200 Welcome \r\n");   
+        sprintf(sbuffer,"200 Welcome\n530 Log in \r\n");   
         bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
-        sprintf(sbuffer,"530 Log in \r\n");   
-        bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
+        //sprintf(sbuffer,"530 Log in \r\n");   
+        //bytes = send(ns, sbuffer, strlen(sbuffer), 0);  
 
         pid = fork();
         if(pid == 0) {
@@ -187,13 +187,14 @@ int main(int argc, char *argv[]) {
 
                  port_connect=0;
                //227 has a strange format, for IP 127.0.0.1 and port DATA_PORT   
-               //the format, where a1.a2.a3.a4 is the IP address and p1*256+p2 is the port number.So it is!     
-                 sprintf(sbuffer, "227 Passive Mode (%d,%d,%d,%d,%d,%d)\r\n",127,0,0,1,(DATA_PORT>>8),(DATA_PORT & 0x00FF));   
+               //the format, where a1.a2.a3.a4 is the IP address and p1*256+p2 is the port number.
+               //Enter server's ip address for remote connection 
+                 sprintf(sbuffer, "227 Passive Mode (%d,%d,%d,%d,%d,%d)\r\n",192,168,1,12,(DATA_PORT>>8),(DATA_PORT & 0x00FF));   
                  bytes = send(ns, sbuffer, strlen(sbuffer), 0);   
                //open a new connection on port DATA_PORT   
                  ns_data = accept(s_data,(struct sockaddr *)(&remoteaddr_data),&addrlen);   
                  printf("connected to %s at port %d \n",inet_ntoa(remoteaddr_data.sin_addr),ntohs(local_data_addr.sin_port));
-                 sprintf(sbuffer, "225 Passive Mode (%d,%d,%d,%d,%d,%d) \r\n",127,0,0,1,(DATA_PORT>>8),(DATA_PORT & 0x00FF));   
+                 sprintf(sbuffer, "225 Passive Mode (%d,%d,%d,%d,%d,%d) \r\n",192,168,1,12,(DATA_PORT>>8),(DATA_PORT & 0x00FF));   
                  bytes = send(ns_data, sbuffer, strlen(sbuffer), 0);   
                 // sy_error=0;   
                }   

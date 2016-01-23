@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
    		localaddr.sin_port = htons((u_short)atoi(argv[1]));   
    else 
    		localaddr.sin_port = htons(1221);  
-   localaddr.sin_addr.s_addr = INADDR_ANY;
+   localaddr.sin_addr.s_addr = inet_addr("192.168.1.12");   //server ip address
       
    local_data_addr.sin_port = htons(1220);   
    local_data_addr.sin_addr.s_addr = INADDR_ANY;
@@ -132,6 +132,7 @@ int main(int argc, char *argv[]) {
               sprintf(ip_char, "%d.%d.%d.%d", remote_ip[0], remote_ip[1], remote_ip[2],remote_ip[3]); 
             //  printf("The ip is %s\n",ip_char);
             //  printf("port0 %d, port1 %d\n",conect_port[0],conect_port[1]);
+              local_data_addr.sin_addr.s_addr=inet_addr(ip_char); 
               //change the format of port to be one decimal number   
               port_dec=conect_port[0];   
               port_dec=port_dec << 8;   
