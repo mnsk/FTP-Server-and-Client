@@ -242,6 +242,8 @@ int main(int argc, char *argv[]) {
              char filename[40],temp_buffer[SIZE]; 
              sscanf(rbuffer+5,"%s",filename);
 
+            // printf("Filename: %s\n",filename);
+
              FILE *fin=fopen(filename,"r"); 
              if(fin == NULL)
                 {   
@@ -273,6 +275,8 @@ int main(int argc, char *argv[]) {
                 //bytes = send(ns, sbuffer, strlen(sbuffer), 0); 
             }
               //sy_error=0;
+            //printf("End\n");
+
           } 
 
 
